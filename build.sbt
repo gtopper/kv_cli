@@ -1,4 +1,4 @@
-name := "kv_cli"
+name := "kv-cli"
 
 organization := "io.iguaz"
 
