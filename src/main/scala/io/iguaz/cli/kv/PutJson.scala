@@ -64,7 +64,11 @@ object PutJson {
               }
           }
       }
-      val row = Row(key, json.extract[Map[String, Any]])
+      val data = json.extract[Map[String, Any]].mapValues {
+        case bigInt: BigInt => bigInt.toLong
+        case other => other
+      }
+      val row = Row(key, data)
       UpdateEntry(targetUri, row, overwriteMode)
     }
     KeyValueOperations().updateItems(updateEntryIterator)
