@@ -18,7 +18,7 @@ object PutJson {
     require(
       args.length >= 2 && args.length <= 6,
       s"Usage: java ${getClass.getName.dropRight(1)} <target> <key field> [<partition field> [<partition regex> " +
-        s"[<partition name>/<partition name>/...] [<partition prefix>,<partition prefix>,...]]]"
+        s"[<partition name>/... [<partition prefix>,...]]]]"
     )
     val targetBase = if (args(0).endsWith("/")) args(0) else s"${args(0)}/"
     val keyField = args(1)

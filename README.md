@@ -10,7 +10,7 @@ Build
 Put to KV
 -----------
 #### Usage
-* `java io.iguaz.cli.kv.PutJson <target> <key field> [<partition field> [<partition regex> [<partition names>]]]`
+* `java io.iguaz.cli.kv.PutJson <target> <key field> [<partition field> [<partition regex> [<partition name>/... [<partition prefix>,...]]]]`
 
 #### Examples
 * Run `echo '{"x":"abc", "date":"2018-06-01 10:01:55"}' | java -cp igz/bigdata/libs/scala-library-2.11.12.jar:igz/bigdata/libs/v3io-spark2-object-dataframe_2.11.jar:kv_cli-assembly-0.1.jar io.iguaz.cli.kv.PutJson /test x date '(\d\d\d\d)-(\d\d)-(\d\d) (\d\d):(\d\d):(\d\d)' year/month/day/hour/minute/second`.
