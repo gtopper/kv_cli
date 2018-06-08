@@ -16,13 +16,15 @@ object PutJson {
   def main(args: Array[String]): Unit = {
     TerminateOnSigPipe.registerHandler()
     require(
-      args.length >= 1 && args.length <= 2,
-      s"Usage: java ${getClass.getName.dropRight(1)} <target> <key field> [<partition field> [<partition regex>]]"
+      args.length >= 2 && args.length <= 5,
+      s"Usage: java ${getClass.getName.dropRight(1)} <target> <key field> " +
+        s"[<partition field> [<partition regex> [<partition names>]]]"
     )
-    val targetBase = args(0)
+    val targetBase = if (args(0).endsWith("/")) args(0) else s"${args(0)}/"
     val keyField = args(1)
     val partitionFieldOption = args.lift.apply(2)
     val partitionRegexOption = partitionFieldOption.flatMap(_ => args.lift.apply(3).map(_.r))
+    val partitionNamesOption = partitionFieldOption.flatMap(_ => args.lift.apply(4).map(_.split('/').toVector))
 
     val container = sys.props.getOrElse("container", "")
     val overwriteMode = sys.props.get("mode")
@@ -41,10 +43,25 @@ object PutJson {
           partitionRegexOption match {
             case None => targetBaseUri.resolve(partitionFieldValueStr)
             case Some(partitionRegex) =>
-              val partitionRegexMatch = partitionRegex.findFirstMatchIn(partitionFieldValueStr).getOrElse(
-                throw new Exception(s"Partition regex '$partitionRegex' did not match '$partitionFieldValueStr'.")
-              )
-              partitionRegexMatch.subgroups.foldLeft(targetBaseUri)(_ resolve _)
+              val partitionValues = partitionFieldValueStr match {
+                case partitionRegex(subgroups@_*) => subgroups
+                case _ => throw new Exception(
+                  s"Partition regex '$partitionRegex' did not match '$partitionFieldValueStr'."
+                )
+              }
+              val partitions = partitionNamesOption match {
+                case None => partitionValues
+                case Some(partitionNames) =>
+                  require(
+                    partitionNames.size == partitionValues.size,
+                    s"Captured ${partitionValues.size} parititons in '$partitionFieldValueStr', " +
+                      s"but ${partitionNames.size} were named."
+                  )
+                  partitionNames.zip(partitionValues).map { case (k, v) => s"$k=$v" }
+              }
+              partitions.foldLeft(targetBaseUri) {
+                case (acc, nextPartition) => acc.resolve(s"$nextPartition/")
+              }
           }
       }
       val row = Row(key, json.extract[Map[String, Any]])
