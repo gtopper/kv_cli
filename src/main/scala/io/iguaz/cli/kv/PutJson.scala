@@ -1,13 +1,15 @@
 package io.iguaz.cli.kv
 
 import java.net.URI
+import java.nio.file.Paths
 
 import scala.io.Source
 
 import org.json4s.DefaultFormats
 import org.json4s.jackson.JsonMethods
 
-import io.iguaz.v3io.kv.{KeyValueOperations, OverwriteMode, Row, UpdateEntry}
+import io.iguaz.v3io.api.container.ContainerAlias
+import io.iguaz.v3io.kv._
 
 object PutJson {
 
@@ -73,9 +75,9 @@ object PutJson {
         case bigInt: BigInt => bigInt.toLong
         case other => other
       }
-      val row = Row(if (keyPrefix.isEmpty) key else s"${keyPrefix}_$key", data)
-      UpdateEntry(targetUri, row, overwriteMode)
+      val row = SimpleRow(if (keyPrefix.isEmpty) key else s"${keyPrefix}_$key", data)
+      UpdateEntry(Paths.get(targetUri), row, overwriteMode)
     }
-    KeyValueOperations().updateItems(updateEntryIterator)
+    KeyValueOperations(ContainerAlias(container), Map.empty[String, Any]).updateMultiple(updateEntryIterator)
   }
 }
