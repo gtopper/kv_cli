@@ -3,6 +3,8 @@ package io.iguaz.cli.kv
 import java.net.URI
 import java.nio.file.Paths
 
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
 import scala.io.Source
 
 import org.json4s.DefaultFormats
@@ -30,7 +32,7 @@ object PutJson {
     val keyPrefixes = partitionNamesOption.flatMap(_ => args.lift.apply(5).map(_.split(',').toVector))
       .getOrElse(Vector.empty)
 
-    val container = sys.props.getOrElse("container", "")
+    val container = sys.props.getOrElse("container", "bigdata")
     val overwriteMode = sys.props.get("mode")
       .map(str => OverwriteMode.valueOf(str.toUpperCase))
       .getOrElse(OverwriteMode.OVERWRITE)
@@ -76,8 +78,10 @@ object PutJson {
         case other => other
       }
       val row = SimpleRow(if (keyPrefix.isEmpty) key else s"${keyPrefix}_$key", data)
-      UpdateEntry(Paths.get(targetUri), row, overwriteMode)
+      UpdateEntry(Paths.get(targetUri.getPath.toString), row, overwriteMode)
     }
-    KeyValueOperations(ContainerAlias(container), Map.empty[String, Any]).updateMultiple(updateEntryIterator)
+    val kvOps = KeyValueOperations(ContainerAlias(container), Map.empty[String, Any])
+    val future = kvOps.updateMultiple(updateEntryIterator)
+    Await.result(future, Duration.Inf)
   }
 }
