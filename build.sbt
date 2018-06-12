@@ -10,7 +10,7 @@ scalacOptions += "-target:jvm-1.8"
 
 libraryDependencies += "org.json4s" %% "json4s-jackson" % "3.5.4"
 
-libraryDependencies += "org.slf4j" % "slf4j-nop" % "1.7.25"
+libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.2.3"
 
 assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = false)
 
