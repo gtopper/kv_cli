@@ -10,6 +10,8 @@ scalacOptions += "-target:jvm-1.8"
 
 libraryDependencies += "org.json4s" %% "json4s-jackson" % "3.5.4"
 
+libraryDependencies += "joda-time" % "joda-time" % "2.10"
+
 libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.2.3"
 
 assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = false)

@@ -4,7 +4,9 @@ import java.net.URI
 
 import scala.io.Source
 
+import org.joda.time.{DateTime, DateTimeZone}
 import org.json4s.DefaultFormats
+import org.json4s.JsonAST.{JInt, JObject, JString}
 import org.json4s.jackson.JsonMethods
 
 import io.iguaz.v3io.kv.{KeyValueOperations, OverwriteMode, Row, UpdateEntry}
@@ -33,12 +35,24 @@ object PutJson {
       .map(str => OverwriteMode.valueOf(str.toUpperCase))
       .getOrElse(OverwriteMode.OVERWRITE)
     val keyPrefixSeparator = sys.props.getOrElse("key-prefix-separator", "_")
+    val timestampToDate = sys.props.getOrElse("convert-timestamp", "false").toBoolean
+    val dryRun = sys.props.getOrElse("dry-run", "false").toBoolean
 
     val targetBaseUri = new URI("v3io", container, targetBase, null, null)
     val inputLineIterator = Source.fromInputStream(System.in).getLines()
     val updateEntryIterator = inputLineIterator.map { line =>
-      val json = JsonMethods.parse(line)
-      val key = (json \ keyField).extract[Any].toString
+      val json = {
+        val jsonTmp = JsonMethods.parse(line).extract[JObject]
+        if (timestampToDate) {
+          val timestamp = (jsonTmp \ "timestamp").extract[Any].toString.toLong
+          val date = new DateTime(timestamp, DateTimeZone.UTC).toString("yyyy-MM-dd HH:mm:ss")
+          jsonTmp.merge(JObject(
+            "timestamp" -> JInt(timestamp),
+            "date" -> JString(date)
+          ))
+        } else jsonTmp
+      }
+      val key = (json \ keyField).extract[Any].toString.replace(" ", "_")
       val (targetUri, keyPrefix) = partitionFieldOption match {
         case None => targetBaseUri -> ""
         case Some(partitionField) =>
@@ -76,6 +90,10 @@ object PutJson {
       val row = Row(if (keyPrefix.isEmpty) key else s"${keyPrefix}_$keyField=$key", data)
       UpdateEntry(targetUri, row, overwriteMode)
     }
-    KeyValueOperations().updateItems(updateEntryIterator)
+    if (dryRun) {
+      updateEntryIterator.foreach(println)
+    } else {
+      KeyValueOperations().updateItems(updateEntryIterator)
+    }
   }
 }
