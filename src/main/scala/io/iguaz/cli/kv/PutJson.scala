@@ -73,7 +73,7 @@ object PutJson {
         case bigInt: BigInt => bigInt.toLong
         case other => other
       }
-      val row = Row(if (keyPrefix.isEmpty) key else s"${keyPrefix}_$key", data)
+      val row = Row(if (keyPrefix.isEmpty) key else s"${keyPrefix}_$keyField=$key", data)
       UpdateEntry(targetUri, row, overwriteMode)
     }
     KeyValueOperations().updateItems(updateEntryIterator)
