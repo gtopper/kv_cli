@@ -36,11 +36,15 @@ object PutJson {
       .getOrElse(OverwriteMode.OVERWRITE)
     val keyPrefixSeparator = sys.props.getOrElse("key-prefix-separator", "_")
     val timestampToDate = sys.props.getOrElse("convert-timestamp", "false").toBoolean
+    val printInput = sys.props.getOrElse("print-input", "true").toBoolean
     val dryRun = sys.props.getOrElse("dry-run", "false").toBoolean
 
     val targetBaseUri = new URI("v3io", container, targetBase, null, null)
     val inputLineIterator = Source.fromInputStream(System.in).getLines()
     val updateEntryIterator = inputLineIterator.map { line =>
+      if (printInput) {
+        println(line)
+      }
       val json = {
         val jsonTmp = JsonMethods.parse(line).extract[JObject]
         if (timestampToDate) {
